@@ -1,4 +1,4 @@
-#![feature(main)]
+// #![feature(main)]
 use anyhow::Result;
 #[allow(unused_imports)]
 use std::path::PathBuf;
@@ -15,13 +15,13 @@ use async_std::{io, io::BufReader, io::Read, task::block_on};
 struct Opt {
     #[structopt(short, long)]
     debug: bool,
-    #[structopt(short = "k", long = "key")]
+    #[structopt(short = "k", long = "key", default_value = "0")]
     key: i8,
-    #[structopt(short = "H", long = "human")]
+    #[structopt(short = "H", long = "human" )]
     human: bool,
-    #[structopt(short = "F", long = "fieldsep")]
+    #[structopt(short = "F", long = "fieldsep", default_value = " ")]
     sep: char,
-    #[structopt(short = "l", long = "lines")]
+    #[structopt(short = "l", long = "lines", default_value = "4000")]
     lines: u32,
 
     file: Vec<PathBuf>,
@@ -48,6 +48,7 @@ async fn fillgrid<R: Read + Unpin>(
 // #[main]
 async fn _main_() -> Result<()> {
     let opt = Opt::from_args();
+    println!("{:?}",opt);
     let buf = match opt.file.len() {
         0 => {
             let fd = io::stdin();
@@ -57,7 +58,7 @@ async fn _main_() -> Result<()> {
             buf
         }
         1 => {
-            let file = File::open(&opt.file[0]).await;
+            let file = File::open(&opt.file[0]).await?;
             let mut reader = BufReader::new(file);
             let parsed_fut = fillgrid(&mut reader, &opt.sep);
             let buf = block_on(parsed_fut);
@@ -66,7 +67,7 @@ async fn _main_() -> Result<()> {
 
         _ => Err(anyhow::anyhow!("no parsable strings found")),
     };
-    println!("{:?}", buf);
+    println!("{:?}", buf.unwrap());
 
     Ok(())
 }
