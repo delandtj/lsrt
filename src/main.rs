@@ -1,3 +1,4 @@
+#![feature(main)]
 use anyhow::Result;
 #[allow(unused_imports)]
 use std::path::PathBuf;
@@ -6,9 +7,9 @@ use structopt::StructOpt;
 use std::marker::Unpin;
 use std::string::String;
 
+use async_std::fs::File;
 use async_std::prelude::*;
 use async_std::{io, io::BufReader, io::Read, task::block_on};
-
 #[derive(Debug, StructOpt)]
 #[structopt(name = "lsrt", about = "lexical sorter")]
 struct Opt {
@@ -43,7 +44,9 @@ async fn fillgrid<R: Read + Unpin>(
     }
     Ok(grid)
 }
-fn main() -> Result<()> {
+
+// #[main]
+async fn _main_() -> Result<()> {
     let opt = Opt::from_args();
     let buf = match opt.file.len() {
         0 => {
@@ -53,10 +56,21 @@ fn main() -> Result<()> {
             let buf = block_on(parsed_fut);
             buf
         }
+        1 => {
+            let file = File::open(&opt.file[0]).await;
+            let mut reader = BufReader::new(file);
+            let parsed_fut = fillgrid(&mut reader, &opt.sep);
+            let buf = block_on(parsed_fut);
+            buf
+        }
 
         _ => Err(anyhow::anyhow!("no parsable strings found")),
     };
     println!("{:?}", buf);
 
+    Ok(())
+}
+fn main() -> Result<()> {
+    block_on(_main_());
     Ok(())
 }
